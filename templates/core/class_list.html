@@ -1,0 +1,50 @@
+<!-- templates/core/class_list.html -->
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="mb-4">班级列表</h1>
+    <form method="get">
+        <div class="input-group mb-3">
+            <input type="text" class="form-control" name="year" placeholder="按入学年份筛选">
+            <button class="btn btn-primary" type="submit">筛选</button>
+        </div>
+    </form>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>班级名称</th>
+                <th>入学年份</th>
+                <th>所属院系</th>
+                <th>班主任</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for class_obj in classes %}
+            <tr>
+                <td><a href="{% url 'core:class_detail' class_obj.pk %}">{{ class_obj.name }}</a></td>
+                <td>{{ class_obj.year }}</td>
+                <td>{{ class_obj.department }}</td>
+                <td>{{ class_obj.advisor }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% if is_paginated %}
+    <div class="pagination">
+        <span class="page-links">
+            {% if page_obj.has_previous %}
+            <a href="{{ request.path }}?page={{ page_obj.previous_page_number }}">上一页</a>
+            {% endif %}
+            <span class="page-current">
+                第 {{ page_obj.number }} 页，共 {{ page_obj.paginator.num_pages }} 页。
+            </span>
+            {% if page_obj.has_next %}
+            <a href="{{ request.path }}?page={{ page_obj.next_page_number }}">下一页</a>
+            {% endif %}
+        </span>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <h3>第{{ report.week }}周报告评论</h3>
+    
+    <!-- 展示已有评论 -->
+    <div class="mb-4">
+        {% for comment in comments %}
+        <div class="card mb-3">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h6 class="card-subtitle text-muted">
+                        {{ comment.user.username }}
+                    </h6>
+                    <small class="text-muted">{{ comment.created_at|date:"Y-m-d H:i" }}</small>
+                </div>
+                <p class="card-text mt-2">{{ comment.content|linebreaks }}</p>
+            </div>
+        </div>
+        {% empty %}
+        <div class="alert alert-info">暂无评论，点击下方添加第一条评论吧~</div>
+        {% endfor %}
+    </div>
+    
+    <!-- 评论表单（仅教师可见） -->
+    {% if user.is_authenticated and user.teacher %}
+    <form method="post">  <!-- 提交到当前视图的URL -->
+        {% csrf_token %}
+        <div class="mb-3">
+            <label for="comment" class="form-label">添加评论</label>
+            <textarea
+                class="form-control"
+                id="comment"
+                name="comment"
+                rows="3"
+                required
+                placeholder="请输入评论内容..."
+            ></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">提交评论</button>
+        <a href="{% url 'reports:report_detail' report.pk %}" class="btn btn-secondary ms-2">返回报告详情</a>
+    </form>
+    {% endif %}
+</div>
+{% endblock %}

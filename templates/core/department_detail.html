@@ -1,0 +1,29 @@
+<!-- templates/core/department_detail.html -->
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="mb-4">{{ department.name }} 详情</h1>
+    <p><strong>院系代码:</strong> {{ department.code }}</p>
+    <h2 class="mb-3">班级列表</h2>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>班级名称</th>
+                <th>入学年份</th>
+                <th>班主任</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for class_obj in classes %}
+            <tr>
+                <td><a href="{% url 'core:class_detail' class_obj.pk %}">{{ class_obj.name }}</a></td>
+                <td>{{ class_obj.year }}</td>
+                <td>{{ class_obj.advisor }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

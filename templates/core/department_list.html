@@ -1,0 +1,42 @@
+<!-- templates/core/department_list.html -->
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="mb-4">院系列表</h1>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>院系名称</th>
+                <th>院系代码</th>
+                <th>班级数量</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for department in departments %}
+            <tr>
+                <td><a href="{% url 'core:department_detail' department.pk %}">{{ department.name }}</a></td>
+                <td>{{ department.code }}</td>
+                <td>{{ department.get_class_count }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% if is_paginated %}
+    <div class="pagination">
+        <span class="page-links">
+            {% if page_obj.has_previous %}
+            <a href="{{ request.path }}?page={{ page_obj.previous_page_number }}">上一页</a>
+            {% endif %}
+            <span class="page-current">
+                第 {{ page_obj.number }} 页，共 {{ page_obj.paginator.num_pages }} 页。
+            </span>
+            {% if page_obj.has_next %}
+            <a href="{{ request.path }}?page={{ page_obj.next_page_number }}">下一页</a>
+            {% endif %}
+        </span>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header">
+            <h3>添加反馈 - 第{{ report.week }}周报告</h3>
+        </div>
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label for="feedback" class="form-label">教师反馈</label>
+                    <textarea class="form-control" id="feedback" name="feedback" rows="5">{{ report.feedback }}</textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">提交反馈</button>
+                <a href="{% url 'reports:report_detail' report.pk %}" class="btn btn-secondary">取消</a>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

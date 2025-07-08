@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>{% if object %}修改{% else %}创建{% endif %}实习报告</h2>
+    
+    <form method="post">
+        {% csrf_token %}
+        <div class="row">
+            <div class="col-md-6">
+                <div class="mb-3">
+                    {{ form.week.label_tag }}
+                    {{ form.week }}
+                    {% if form.week.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.week.errors.0 }}
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="mb-3">
+                    {{ form.company.label_tag }}
+                    {{ form.company }}
+                    {% if form.company.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.company.errors.0 }}
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="mb-3">
+                    {{ form.position.label_tag }}
+                    {{ form.position }}
+                    {% if form.position.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.position.errors.0 }}
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="mb-3">
+                    {{ form.status.label_tag }}
+                    {{ form.status }}
+                    {% if form.status.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.status.errors.0 }}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="mb-3">
+                    {{ form.content.label_tag }}
+                    {{ form.content }}
+                    {% if form.content.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.content.errors.0 }}
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="mb-3">
+                    {{ form.problems.label_tag }}
+                    {{ form.problems }}
+                    {% if form.problems.errors %}
+                        <div class="invalid-feedback d-block">
+                            {{ form.problems.errors.0 }}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <button type="submit" class="btn btn-primary">提交</button>
+        <a href="{% url 'report_list' %}" class="btn btn-secondary">取消</a>
+    </form>
+</div>
+{% endblock %}

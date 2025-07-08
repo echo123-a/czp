@@ -1,0 +1,575 @@
+{% extends "admin/base_site.html" %}
+{% load static i18n %}
+
+{% block extrahead %}
+{{ block.super }}
+<link
+  href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+  rel="stylesheet"
+/>
+<link
+  rel="stylesheet"
+  href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css"
+/>
+<script src="https://cdn.bootcdn.net/ajax/libs/echarts/5.4.3/echarts.min.js"></script>
+
+<style>
+  :root {
+    --primary: #3498db;
+    --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  }
+  
+  .dashboard-header {
+    background: linear-gradient(120deg, #1a2a6c, #2c3e50);
+    color: white;
+    padding: 2rem 0;
+    margin-bottom: 2rem;
+    box-shadow: var(--card-shadow);
+  }
+  
+  .stat-card {
+    background: white;
+    border-radius: 10px;
+    box-shadow: var(--card-shadow);
+    transition: all 0.3s ease;
+    opacity: 0;
+    transform: translateY(20px);
+    animation: fadeInUp 0.6s forwards;
+  }
+  
+  .stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+  }
+  
+  @keyframes fadeInUp {
+    to { opacity: 1; transform: translateY(0); }
+  }
+  
+  .empty-state {
+    text-align: center;
+    padding: 3rem;
+    color: #6c757d;
+  }
+  
+  .empty-state i {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    opacity: 0.2;
+  }
+  
+  #chart-container {
+    height: 400px;
+    width: 100%;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    margin: 15px 0;
+    min-height: 200px;
+  }
+  
+  .chart-error {
+    padding: 15px;
+    text-align: center;
+    color: #721c24;
+    background-color: #f8d7da;
+    border-radius: 5px;
+    margin: 15px 0;
+  }
+  
+  .debug-panel {
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 5px;
+    padding: 15px;
+    margin-bottom: 20px;
+  }
+  
+  .debug-panel h5 {
+    color: #6c757d;
+    border-bottom: 1px solid #dee2e6;
+    padding-bottom: 10px;
+  }
+  
+  .status-badge {
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 500;
+  }
+    /* 历史记录页面特定样式 */
+  .history-table th {
+      white-space: nowrap;
+      position: sticky;
+      top: 0;
+      background: #f8f9fa;
+      z-index: 10;
+  }
+  
+  .history-table td {
+      vertical-align: middle;
+  }
+  
+  .history-table .badge {
+      font-size: 0.85em;
+      min-width: 70px;
+      display: inline-block;
+      text-align: center;
+  }
+  .btn-export {
+    background-color: #28a745;
+    color: white;
+    transition: all 0.3s;
+  }
+
+  .btn-export:hover {
+      background-color: #218838;
+      color: white;
+      transform: translateY(-2px);
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-header">
+  <div class="container">
+    <h1 class="h3">
+      <i class="fa fa-chalkboard-teacher me-2"></i>
+      实习周报管理系统 - 教师仪表板
+    </h1>
+    <p class="text-muted">实时监控学生实习状态与报告提交情况</p>
+  </div>
+</div>
+
+<div class="container">
+  <!-- 调试信息面板 -->
+  <div class="debug-panel">
+    <h5><i class="fa fa-bug me-2"></i>调试信息</h5>
+    <div class="row">
+      <div class="col-md-4">
+        <p><strong>总报告数:</strong> {{ total_reports }}</p>
+      </div>
+      <div class="col-md-4">
+        <p><strong>紧急报告:</strong> {{ urgent_reports }}</p>
+      </div>
+      <div class="col-md-4">
+        <p><strong>状态种类:</strong> {{ status_stats|length }}</p>
+      </div>
+    </div>
+    <div class="mt-2">
+      <p><strong>状态数据:</strong> <span id="status-data-debug">加载中...</span></p>
+      <p><strong>图表状态:</strong> <span id="chart-status">未初始化</span></p>
+    </div>
+  </div>
+
+  <!-- 统计卡片 -->
+  <div class="row mb-4">
+    <div class="col-md-3">
+      <div class="stat-card p-3">
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <h6 class="mb-0 text-uppercase">总报告数</h6>
+            <p class="h4 mb-0">{{ total_reports }}</p>
+          </div>
+          <div class="stat-icon bg-primary bg-opacity-10 text-primary">
+            <i class="fa fa-file-alt fa-2x"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="col-md-3">
+      <div class="stat-card p-3">
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <h6 class="mb-0 text-uppercase">紧急报告</h6>
+            <p class="h4 mb-0">{{ urgent_reports }}</p>
+          </div>
+          <div class="stat-icon bg-danger bg-opacity-10 text-danger">
+            <i class="fa fa-exclamation-circle fa-2x"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="col-md-3">
+      <div class="stat-card p-3">
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <h6 class="mb-0 text-uppercase">参与学生</h6>
+            <p class="h4 mb-0">{{ student_stats|length }}</p>
+          </div>
+          <div class="stat-icon bg-success bg-opacity-10 text-success">
+            <i class="fa fa-users fa-2x"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="col-md-3">
+      <div class="stat-card p-3">
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <h6 class="mb-0 text-uppercase">状态分布</h6>
+            <p class="h4 mb-0">{{ status_stats|length }}</p>
+          </div>
+          <div class="stat-icon bg-info bg-opacity-10 text-info">
+            <i class="fa fa-chart-pie fa-2x"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 就业状态分布 -->
+  <div class="card mb-4">
+
+    <div class="card-body">
+      {% if status_stats %}
+        
+        <!-- 手动创建数据脚本 -->
+        
+        <div class="mt-4">
+          <h5 class="mb-3">详细状态分布</h5>
+          <div class="row">
+            {% for stat in status_stats %}
+            <div class="col-md-4 mb-3">
+              <div class="status-card p-3 rounded">
+                <div class="d-flex justify-content-between align-items-center">
+                  <span class="status-badge"
+                        style="background-color: rgba(52, 152, 219, 0.15); color: #3498db;">
+                    {{ stat.status_display }}
+                  </span>
+                  <span class="h5 mb-0">{{ stat.count }} 人</span>
+                </div>
+                <div class="progress mt-2" style="height: 10px;">
+                  <div class="progress-bar" role="progressbar"
+                       style="width: {{ stat.percent }}%; background-color: #3498db;"
+                       aria-valuenow="{{ stat.percent }}"
+                       aria-valuemin="0"
+                       aria-valuemax="100">
+                  </div>
+                </div>
+                <div class="text-end mt-1">
+                  <small>{{ stat.percent|floatformat:1 }}%</small>
+                </div>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      {% else %}
+        <div class="empty-state">
+          <i class="fa fa-chart-bar"></i>
+          <h5>暂无就业状态数据</h5>
+          <p class="text-muted">请等待学生提交实习报告后查看</p>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- 学生报告统计 -->
+  <div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">
+            <i class="fa fa-user-graduate me-2"></i>
+            学生报告统计
+        </h5>
+        <span class="badge bg-light text-dark">
+            {{ student_stats|length }} 名学生
+        </span>
+    </div>
+    <div class="card-body">
+        {% if student_stats %}
+            <div class="table-responsive">
+                <table class="table table-hover table-bordered">
+                    <thead class="table-light">
+                        <tr>
+                            <th>学生姓名</th>
+                            <th>总报告数</th>
+                            <th>紧急报告</th>
+                            <th>最近提交时间</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for stat in student_stats %}
+                            {% if stat.student__id %}
+                            <tr>
+                                <td>{{ stat.student__username|default:"匿名" }}</td>
+                                <td>{{ stat.count }}</td>
+                                <td>
+                                    {% if stat.urgent > 0 %}
+                                        <span class="badge bg-danger">{{ stat.urgent }}</span>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {{ stat.latest|date:"Y-m-d H:i"|default:"-" }}
+                                </td>
+                                <td>
+                                    <a href="{% url 'reports:student_history' stat.student__id %}"
+                                       class="btn btn-sm btn-outline-primary">
+                                        <i class="fa fa-history"></i> 查看历史
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endif %}
+                        {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center">
+                                    <div class="alert alert-info">暂无学生报告数据</div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <i class="fa fa-file-alt"></i>
+                <h5>暂无学生报告数据</h5>
+                <p class="text-muted">当前没有学生提交报告</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+  <!-- 最近提交的报告 -->
+  <div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <h5 class="mb-0">
+        <i class="fa fa-history me-2"></i>
+        最近提交的报告
+      </h5>
+      <span class="badge bg-light text-dark">
+        {{ reports|length }} 份
+      </span>
+    </div>
+    <div class="card-body">
+      {% if reports %}
+        <div class="table-responsive">
+          <table class="table table-hover table-bordered">
+            <thead class="table-light">
+              <tr>
+                <th>学生</th>
+                <th>周次</th>
+                <th>公司</th>
+                <th>状态</th>
+                <th>提交时间</th>
+                <th>紧急</th>
+                <th>评论</th>
+                <th>标记</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for report in reports %}
+                <tr>
+                  <td>{{ report.student.username|default:"未知" }}</td>
+                  <td>第{{ report.week }}周</td>
+                  <td>{{ report.company|default:"-" }}</td>
+                  <td>
+                    <span class="badge" style="background-color: rgba(52, 152, 219, 0.15); color: #3498db;">
+                      {{ report.get_status_display|default:"未知" }}
+                    </span>
+                  </td>
+                  <td>{{ report.created_at|date:"Y-m-d H:i" }}</td>
+                  <td>
+                    {% if report.is_urgent %}
+                      <span class="badge bg-danger">是</span>
+                    {% else %}
+                      <span class="text-muted">否</span>
+                    {% endif %}
+                  </td>
+                  <td>{{ report.comments|truncatechars:50|default:"暂无评论" }}</td>
+                  <td>{{ report.tags|default:"暂无标记" }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="empty-state">
+          <i class="fa fa-file-medical"></i>
+          <h5>暂无最近报告</h5>
+          <p class="text-muted">最近没有学生提交报告</p>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extrajs %}
+{{ block.super }}
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+  // 更新调试信息
+  function updateDebugInfo(elementId, message) {
+    const element = document.getElementById(elementId);
+    if (element) {
+      element.textContent = message;
+    }
+    console.log(`[DEBUG] ${elementId}: ${message}`);
+  }
+
+  // 主初始化函数
+  function initChart() {
+    try {
+      updateDebugInfo('chart-status', '开始初始化柱状图...');
+      
+      // 1. 检查ECharts库是否加载
+      if (typeof echarts === 'undefined') {
+        throw new Error("ECharts库未加载");
+      }
+      updateDebugInfo('chart-status', 'ECharts已加载');
+      
+      // 2. 获取图表容器
+      const chartContainer = document.getElementById('chart-container');
+      if (!chartContainer) {
+        throw new Error("图表容器未找到");
+      }
+      updateDebugInfo('chart-status', '图表容器已找到');
+      
+      // 3. 获取数据脚本
+      const statusDataElement = document.getElementById('status-stats-data');
+      if (!statusDataElement) {
+        throw new Error("数据脚本元素未找到");
+      }
+      updateDebugInfo('chart-status', '数据脚本已找到');
+      
+      // 4. 解析JSON数据
+      let statusStats = [];
+      try {
+        statusStats = JSON.parse(statusDataElement.textContent);
+        updateDebugInfo('status-data-debug', `成功解析 ${statusStats.length} 条数据`);
+        updateDebugInfo('chart-status', `已解析 ${statusStats.length} 条数据`);
+      } catch (e) {
+        throw new Error("JSON解析失败: " + e.message);
+      }
+      
+      // 5. 检查数据是否有效
+      if (statusStats.length === 0) {
+        updateDebugInfo('chart-status', '无有效数据，跳过图表初始化');
+        return;
+      }
+      
+      // 6. 准备图表数据
+      const categories = [];
+      const counts = [];
+      const colors = [];
+      
+      // 状态颜色映射
+      const colorMap = {
+        '实习中': '#3498db',
+        '求职中': '#f39c12',
+        '已签约': '#2ecc71',
+        '学习中': '#3498db',
+        '理解中': '#f39c12',
+        '已读中': '#2ecc71',
+        'intern': '#3498db',
+        'job': '#f39c12',
+        'signed': '#2ecc71'
+      };
+      
+      statusStats.forEach(stat => {
+        categories.push(stat.status_display);
+        counts.push(stat.count);
+        colors.push(colorMap[stat.status] || colorMap[stat.status_display] || '#95a5a6');
+      });
+      
+      updateDebugInfo('chart-status', '数据准备完成');
+      
+      // 7. 初始化图表
+      const barChart = echarts.init(chartContainer);
+      updateDebugInfo('chart-status', '图表实例已创建');
+      
+      // 8. 配置图表选项（柱状图）
+      const option = {
+        title: {
+          text: '就业状态分布',
+          left: 'center'
+        },
+        tooltip: {
+          trigger: 'axis',
+          formatter: function(params) {
+            const stat = statusStats[params[0].dataIndex];
+            return `${stat.status_display}: ${stat.count} 人 (${stat.percent}%)`;
+          }
+        },
+        xAxis: {
+          type: 'category',
+          data: categories,
+          axisLabel: {
+            interval: 0,
+            rotate: 30
+          }
+        },
+        yAxis: {
+          type: 'value',
+          name: '人数',
+          min: 0
+        },
+        series: [
+          {
+            name: '人数',
+            type: 'bar',
+            data: counts,
+            itemStyle: {
+              color: function(params) {
+                return colors[params.dataIndex];
+              }
+            },
+            label: {
+              show: true,
+              position: 'top',
+              formatter: '{c} 人'
+            }
+          }
+        ]
+      };
+      
+      // 9. 渲染图表
+      barChart.setOption(option);
+      updateDebugInfo('chart-status', '柱状图已成功渲染');
+      
+      // 10. 响应窗口大小变化
+      window.addEventListener('resize', function() {
+        barChart.resize();
+        updateDebugInfo('chart-status', '图表已调整大小');
+      });
+      
+    } catch (error) {
+      // 显示错误信息
+      updateDebugInfo('chart-status', `初始化失败: ${error.message}`);
+      updateDebugInfo('status-data-debug', `错误: ${error.message}`);
+      console.error("图表初始化错误:", error);
+      
+      // 在图表容器中显示错误
+      if (document.getElementById('chart-container')) {
+        document.getElementById('chart-container').innerHTML = `
+          <div class="chart-error">
+            <i class="fa fa-exclamation-triangle me-2"></i>
+            <strong>图表加载失败:</strong> ${error.message}
+            <div class="mt-2 small">详细信息请查看调试面板</div>
+          </div>
+        `;
+      }
+    }
+  }
+
+  // 确保在页面完全加载后执行
+  function checkPageReady() {
+    if (document.readyState === 'complete') {
+      initChart();
+    } else {
+      document.addEventListener('DOMContentLoaded', initChart);
+      window.addEventListener('load', initChart);
+    }
+  }
+
+  // 启动初始化检查
+  checkPageReady();
+</script>
+{% endblock %}
