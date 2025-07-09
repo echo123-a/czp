@@ -1,0 +1,104 @@
+<!-- reports/templates/reports/student_history.html -->
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>{{ student.username }}的历史报告记录</h2>
+        <div>
+            <a href="{% url 'reports:export_student_history' student.id %}"
+               class="btn btn-success">
+                <i class="fa fa-file-excel"></i> 导出Excel
+            </a>
+            <a href="{% url 'core:teacher_dashboard' %}" class="btn btn-secondary ml-2">
+                <i class="fa fa-arrow-left"></i> 返回仪表板
+            </a>
+        </div>
+
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>周次</th>
+                            <th>实习单位</th>
+                            <th>就业状态</th>
+                            <th>提交时间</th>
+                            <th>紧急状态</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for report in reports %}
+                        <tr>
+                            <td>第{{ report.week }}周</td>
+                            <td>{{ report.company|default:"未填写" }}</td>
+                            <td>
+                                <span class="badge
+                                    {% if report.status == 'signed' %}bg-success
+                                    {% elif report.status == 'job' %}bg-info
+                                    {% else %}bg-primary{% endif %}">
+                                    {{ report.get_status_display }}
+                                </span>
+                            </td>
+                            <td>{{ report.created_at|date:"Y-m-d H:i" }}</td>
+                            <td>
+                                {% if report.is_urgent %}
+                                    <span class="badge bg-danger">紧急</span>
+                                {% else %}
+                                    <span class="badge bg-success">正常</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{% url 'reports:report_detail' report.pk %}"
+                                   class="btn btn-sm btn-outline-primary">
+                                    <i class="fa fa-eye"></i> 查看详情
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center py-4">
+                                <div class="alert alert-info">该学生尚未提交任何报告</div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- 分页控件 -->
+            {% if is_paginated %}
+            <nav class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1">&laquo; 首页</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}">上一页</a>
+                    </li>
+                    {% endif %}
+                    
+                    <li class="page-item disabled">
+                        <span class="page-link">
+                            第 {{ page_obj.number }} 页，共 {{ page_obj.paginator.num_pages }} 页
+                        </span>
+                    </li>
+                    
+                    {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}">下一页</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">末页 &raquo;</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

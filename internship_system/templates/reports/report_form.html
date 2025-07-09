@@ -1,0 +1,47 @@
+<!-- reports/templates/reports/report_form.html -->
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">
+        {% if object %}修改{% else %}提交{% endif %}实习周报
+    </h2>
+    <form method="post">
+        {% csrf_token %}
+        <div class="row">
+            <div class="col-md-6">
+                <div class="mb-3">
+                    {{ form.week.label_tag }}
+                    {{ form.week }}
+                    <small class="text-muted">{{ form.week.help_text }}</small>
+                </div>
+                <div class="mb-3">
+                    {{ form.company.label_tag }}
+                    {{ form.company }}
+                </div>
+                <div class="mb-3">
+                    {{ form.position.label_tag }}
+                    {{ form.position }}
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="mb-3">
+                    {{ form.status.label_tag }}
+                    {{ form.status }}
+                    <small class="text-muted">{{ form.status.help_text }}</small>
+                </div>
+            </div>
+        </div>
+        <div class="mb-3">
+            {{ form.content.label_tag }}
+            {{ form.content }}
+        </div>
+        <div class="mb-3">
+            {{ form.problems.label_tag }}
+            {{ form.problems }}
+        </div>
+        <button type="submit" class="btn btn-primary">提交</button>
+        <a href="{% url 'reports:report_list' %}" class="btn btn-secondary">取消</a>
+    </form>
+</div>
+{% endblock %}

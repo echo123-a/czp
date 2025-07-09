@@ -1,0 +1,14 @@
+<!-- templates/core/notification_detail.html -->
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="mb-4">{{ notification.title }}</h1>
+    <p><strong>通知类型:</strong> {{ notification.get_notification_type_display }}</p>
+    <p><strong>创建时间:</strong> {{ notification.created_at }}</p>
+    <p><strong>已读状态:</strong> {% if notification.is_read %}已读{% else %}未读{% endif %}</p>
+    <p><strong>通知内容:</strong></p>
+    <p>{{ notification.content }}</p>
+</div>
+{% endblock %}

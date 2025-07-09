@@ -1,0 +1,28 @@
+{% extends "admin/index.html" %}
+
+{% block content %}
+{{ block.super }}
+
+{% if has_dashboard %}
+<div class="module">
+    <table>
+        <caption>
+            <a href="{% url 'custom_admin:teacher_dashboard' %}" class="section">
+                教师仪表板
+            </a>
+        </caption>
+        <tbody>
+            <tr>
+                <th scope="row">
+                    <a href="{% url 'custom_admin:teacher_dashboard' %}">
+                        查看实习统计信息
+                    </a>
+                </th>
+                <td>&nbsp;</td>
+                <td>&nbsp;</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+{% endif %}
+{% endblock %}

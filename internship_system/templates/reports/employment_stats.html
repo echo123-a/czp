@@ -1,0 +1,124 @@
+{% extends 'base.html' %}
+{% block title %}就业意向分布统计{% endblock %}
+{% block header %}就业意向分布统计{% endblock %}
+{% block subheader %}按专业和班级统计的就业意向分布数据{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- 按专业统计图表 -->
+    <div class="col-md-6 mb-5">
+        <div class="card">
+            <div class="card-header">
+                <h5>按专业统计就业意向分布</h5>
+            </div>
+            <div class="card-body">
+                {% if not has_major_data %}
+                    <div class="text-center text-muted py-5">
+                        <i class="bi bi-bar-chart-line text-muted" style="font-size: 3rem;"></i>
+                        <p class="mt-3">暂无专业统计数据</p>
+                        <small>请确保存在填写了专业的学生报告</small>
+                    </div>
+                {% else %}
+                    <canvas id="majorChart" height="300"></canvas>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- 按班级统计图表 -->
+    <div class="col-md-6 mb-5">
+        <div class="card">
+            <div class="card-header">
+                <h5>按班级统计就业意向分布</h5>
+            </div>
+            <div class="card-body">
+                {% if not has_class_data %}
+                    <div class="text-center text-muted py-5">
+                        <i class="bi bi-bar-chart-line text-muted" style="font-size: 3rem;"></i>
+                        <p class="mt-3">暂无班级统计数据</p>
+                        <small>请确保存在填写了班级的学生报告</small>
+                    </div>
+                {% else %}
+                    <canvas id="classChart" height="300"></canvas>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // 等待DOM加载完成
+    document.addEventListener('DOMContentLoaded', function() {
+        // 1. 专业统计图表
+        {% if has_major_data %}
+            const majorStats = {{ major_stats|safe }};
+            const majors = majorStats.map(stat => stat['student__student_profile__major'] || '未知专业');
+            const jobCounts = majorStats.map(stat => stat.job_count || 0);
+            const internCounts = majorStats.map(stat => stat.intern_count || 0);
+            const signedCounts = majorStats.map(stat => stat.signed_count || 0);
+            const otherCounts = majorStats.map(stat => stat.other_count || 0);
+
+            new Chart(document.getElementById('majorChart'), {
+                type: 'bar',
+                data: {
+                    labels: majors,
+                    datasets: [
+                        { label: '求职中', data: jobCounts, backgroundColor: 'rgba(255, 99, 132, 0.7)' },
+                        { label: '实习中', data: internCounts, backgroundColor: 'rgba(54, 162, 235, 0.7)' },
+                        { label: '已签约', data: signedCounts, backgroundColor: 'rgba(255, 205, 86, 0.7)' },
+                        { label: '其他', data: otherCounts, backgroundColor: 'rgba(75, 192, 192, 0.7)' }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: { beginAtZero: true, title: { display: true, text: '学生数量' } },
+                        x: { title: { display: true, text: '专业' } }
+                    },
+                    plugins: {
+                        legend: { position: 'top' },
+                        title: { display: true, text: '各专业就业意向分布' }
+                    }
+                }
+            });
+        {% endif %}
+
+        // 2. 班级统计图表
+        {% if has_class_data %}
+            const classStats = {{ class_stats|safe }};
+            const classes = classStats.map(stat => stat['student__student_profile__class_group'] || '未知班级');
+            const classJobCounts = classStats.map(stat => stat.job_count || 0);
+            const classInternCounts = classStats.map(stat => stat.intern_count || 0);
+            const classSignedCounts = classStats.map(stat => stat.signed_count || 0);
+            const classOtherCounts = classStats.map(stat => stat.other_count || 0);
+
+            new Chart(document.getElementById('classChart'), {
+                type: 'bar',
+                data: {
+                    labels: classes,
+                    datasets: [
+                        { label: '求职中', data: classJobCounts, backgroundColor: 'rgba(255, 99, 132, 0.7)' },
+                        { label: '实习中', data: classInternCounts, backgroundColor: 'rgba(54, 162, 235, 0.7)' },
+                        { label: '已签约', data: classSignedCounts, backgroundColor: 'rgba(255, 205, 86, 0.7)' },
+                        { label: '其他', data: classOtherCounts, backgroundColor: 'rgba(75, 192, 192, 0.7)' }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: { beginAtZero: true, title: { display: true, text: '学生数量' } },
+                        x: { title: { display: true, text: '班级' } }
+                    },
+                    plugins: {
+                        legend: { position: 'top' },
+                        title: { display: true, text: '各班级就业意向分布' }
+                    }
+                }
+            });
+        {% endif %}
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,175 @@
+<!-- templates/admin/teacher_dashboard.html -->
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="mb-4">实习周报管理系统 - 教师仪表板</h1>
+    
+    <!-- 统计卡片 -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-white bg-primary">
+                <div class="card-body">
+                    <h5 class="card-title">总报告数</h5>
+                    <p class="card-text display-4">{{ total_reports }}</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card text-white bg-danger">
+                <div class="card-body">
+                    <h5 class="card-title">紧急报告</h5>
+                    <p class="card-text display-4">{{ urgent_reports }}</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card text-white bg-success">
+                <div class="card-body">
+                    <h5 class="card-title">已签约</h5>
+                    <p class="card-text display-4">
+                        {% for stat in status_stats %}
+                            {% if stat.status == 'signed' %}{{ stat.count }}{% endif %}
+                        {% endfor %}
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card text-white bg-info">
+                <div class="card-body">
+                    <h5 class="card-title">实习中</h5>
+                    <p class="card-text display-4">
+                        {% for stat in status_stats %}
+                            {% if stat.status == 'intern' %}{{ stat.count }}{% endif %}
+                        {% endfor %}
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 状态分布 -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5>就业状态分布</h5>
+        </div>
+        <div class="card-body">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>状态</th>
+                        <th>数量</th>
+                        <th>占比</th>
+                        <th>进度条</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for stat in status_stats %}
+                    <tr>
+                        <td>{{ stat.get_status_display }}</td>
+                        <td>{{ stat.count }}</td>
+                        <td>{{ stat.count|floatformat:2 }}%</td>
+                        <td>
+                            <div class="progress">
+                                <div class="progress-bar" role="progressbar"
+                                     style="width: {{ stat.percent }}%;"
+                                     aria-valuenow="{{ stat.percent }}"
+                                     aria-valuemin="0"
+                                     aria-valuemax="100">
+                                    {{ stat.percent|floatformat:1 }}%
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <!-- 学生报告统计 -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5>学生报告统计</h5>
+        </div>
+        <div class="card-body">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>学生</th>
+                        <th>总报告数</th>
+                        <th>紧急报告</th>
+                        <th>最近提交</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for stat in student_stats %}
+                    <tr>
+                        <td>{{ stat.student__username }}</td>
+                        <td>{{ stat.count }}</td>
+                        <td>
+                            {% if stat.urgent %}
+                            <span class="badge bg-danger">{{ stat.urgent }}</span>
+                            {% else %}-{% endif %}
+                        </td>
+                        <td>{% firstof stat.latest|date:"Y-m-d" "-" %}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <!-- 最近报告 -->
+    <div class="card">
+        <div class="card-header">
+            <h5>最近提交的报告</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>学生</th>
+                            <th>周次</th>
+                            <th>公司</th>
+                            <th>状态</th>
+                            <th>提交时间</th>
+                            <th>紧急</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for report in reports %}
+                        <tr>
+                            <td>{{ report.student.username }}</td>
+                            <td>第{{ report.week }}周</td>
+                            <td>{{ report.company|default:"-" }}</td>
+                            <td>
+                                <span class="badge
+                                    {% if report.status == 'signed' %}bg-success
+                                    {% elif report.status == 'job' %}bg-info
+                                    {% elif report.status == 'intern' %}bg-primary
+                                    {% else %}bg-secondary{% endif %}">
+                                    {{ report.get_status_display }}
+                                </span>
+                            </td>
+                            <td>{{ report.created_at|date:"m-d H:i" }}</td>
+                            <td>
+                                {% if report.is_urgent %}
+                                <span class="badge bg-danger">紧急</span>
+                                {% else %}-{% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

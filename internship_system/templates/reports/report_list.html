@@ -1,0 +1,101 @@
+<!-- reports/templates/reports/report_list.html -->
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>实习报告列表</h2>
+    
+    {% if user.student_profile %}
+    <div class="mb-3">
+        <a href="{% url 'reports:report_create' %}" class="btn btn-primary">
+            创建新报告
+        </a>
+    </div>
+    {% endif %}
+    
+    <!-- 添加学生筛选下拉框（仅教师可见） -->
+    {% if perms.reports.can_view_all_reports %}
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-6">
+                    <label for="student" class="form-label">筛选学生</label>
+                    <select id="student" name="student" class="form-select" onchange="this.form.submit()">
+                        <option value="">-- 所有学生 --</option>
+                        {% for student in students %}
+                        <option value="{{ student.id }}"
+                            {% if selected_student and selected_student.id == student.id %}selected{% endif %}>
+                            {{ student.username }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                {% if selected_student %}
+                <div class="col-md-6 d-flex align-items-end">
+                    <a href="{% url 'reports:report_list' %}" class="btn btn-outline-secondary">
+                        清除筛选
+                    </a>
+                </div>
+                {% endif %}
+            </form>
+        </div>
+    </div>
+    {% endif %}
+    
+    <div class="list-group">
+        {% for report in reports %}
+        <a href="{% url 'reports:report_detail' report.pk %}" class="list-group-item list-group-item-action">
+            <div class="d-flex w-100 justify-content-between">
+                <h5 class="mb-1">第{{ report.week }}周报告</h5>
+                <small>{{ report.created_at|date:"Y-m-d" }}</small>
+            </div>
+            <p class="mb-1">实习单位: {{ report.company|default:"未填写" }}</p>
+            <small>状态:
+                <span class="badge
+                    {% if report.status == 'signed' %}bg-success
+                    {% elif report.status == 'job' %}bg-info
+                    {% else %}bg-primary{% endif %}">
+                    {{ report.get_status_display }}
+                </span>
+            </small>
+            {% if perms.reports.can_view_all_reports %}
+            <small class="d-block mt-1">学生: {{ report.student.username }}</small>
+            {% endif %}
+        </a>
+        {% empty %}
+        <div class="alert alert-info">暂无实习报告</div>
+        {% endfor %}
+    </div>
+    
+    <!-- 分页控件 -->
+    {% if is_paginated %}
+    <nav class="mt-4">
+        <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page=1{% if selected_student %}&student={{ selected_student.id }}{% endif %}">&laquo; 首页</a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if selected_student %}&student={{ selected_student.id }}{% endif %}">上一页</a>
+            </li>
+            {% endif %}
+            
+            <li class="page-item disabled">
+                <span class="page-link">
+                    第 {{ page_obj.number }} 页，共 {{ page_obj.paginator.num_pages }} 页
+                </span>
+            </li>
+            
+            {% if page_obj.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if selected_student %}&student={{ selected_student.id }}{% endif %}">下一页</a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if selected_student %}&student={{ selected_student.id }}{% endif %}">末页 &raquo;</a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+{% endblock %}

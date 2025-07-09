@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+
+{% block title %}切换用户{% endblock %}
+{% block header %}切换用户{% endblock %}
+{% block subheader %}仅管理员可切换用户身份{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h5>用户列表</h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>用户名</th>
+                        <th>邮箱</th>
+                        <th>用户类型</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in users %}
+                    <tr>
+                        <td>{{ user.username }}</td>
+                        <td>{{ user.email }}</td>
+                        <td>
+                            {% if user.is_teacher %}
+                                <span class="badge bg-primary">教师</span>
+                            {% else %}
+                                <span class="badge bg-success">学生</span>
+                            {% endif %}
+                            {% if user.is_superuser %}
+                                <span class="badge bg-danger">管理员</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{% url 'users:switch_user' user.id %}" 
+                               class="btn btn-sm btn-outline-primary"
+                               onclick="return confirm('确定要切换到 {{ user.username }} 吗？')">
+                                切换到此用户
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4" class="text-center text-muted">暂无用户数据</td>
+                    </tr>
+                    {% endfor %}  {# 确保此处有 {% endfor %} 闭合循环 #}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
